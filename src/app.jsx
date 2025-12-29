@@ -20,7 +20,7 @@ export function App() {
     // Add OpenStreetMap tile layer (free and open source)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
+      maxZoom: 18,
     }).addTo(map)
 
     // Cleanup function to remove map on unmount
