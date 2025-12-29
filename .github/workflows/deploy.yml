@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Setup Fly.io CLI
-        uses: superfly/flyctl-actions/setup-flyctl@master
+        uses: superfly/flyctl-actions/setup-flyctl@v1
 
       - name: Deploy to Fly.io
         run: flyctl deploy --remote-only
