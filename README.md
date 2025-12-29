@@ -55,6 +55,16 @@ npm run preview
 - **Leaflet**: Open-source JavaScript library for interactive maps
 - **OpenStreetMap**: Free, editable map of the world
 
+## Deployment
+
+This project is configured for automatic deployment to Fly.io using GitHub Actions. 
+
+📱 **For complete deployment instructions optimized for phone use, see [DEPLOYMENT.md](DEPLOYMENT.md)**
+
+The app automatically deploys to Fly.io when:
+- You push to the `main` branch
+- You merge a Pull Request into `main`
+
 ## About
 
 Testing if you can use Copilot Agenticode to write an app on the phone on a plane. 
