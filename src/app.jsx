@@ -52,6 +52,8 @@ export function App() {
   const [originAirport, setOriginAirport] = useState(null)
   const [destinationAirport, setDestinationAirport] = useState(null)
   const [routeInfo, setRouteInfo] = useState(null)
+  const [routeInfoExpanded, setRouteInfoExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
 
   // Load airports data
   useEffect(() => {
@@ -87,6 +89,16 @@ export function App() {
     return () => {
       map.remove()
     }
+  }, [])
+
+  // Track window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Memoize max level calculation to avoid recalculating on every render
@@ -300,6 +312,7 @@ export function App() {
     setOriginAirport(null)
     setDestinationAirport(null)
     setRouteInfo(null)
+    setRouteInfoExpanded(false)
   }
 
   const handleSearchToggle = () => {
@@ -405,12 +418,29 @@ export function App() {
       
       {/* Route Info Box */}
       {routeInfo && (
-        <div class="route-info-box">
-          <div class="route-info-header">
+        <div class={`route-info-box ${routeInfoExpanded ? 'expanded' : ''}`}>
+          <div class="route-info-header" onClick={() => isMobile && setRouteInfoExpanded(!routeInfoExpanded)}>
             <h3>Route Information</h3>
-            <button class="close-button" onClick={clearRoute} aria-label="Clear route">
-              ×
-            </button>
+            <div class="header-buttons">
+              {isMobile && (
+                <button 
+                  class="expand-button" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setRouteInfoExpanded(!routeInfoExpanded)
+                  }}
+                  aria-label={routeInfoExpanded ? "Collapse" : "Expand"}
+                >
+                  {routeInfoExpanded ? '−' : '+'}
+                </button>
+              )}
+              <button class="close-button" onClick={(e) => {
+                e.stopPropagation()
+                clearRoute()
+              }} aria-label="Clear route">
+                ×
+              </button>
+            </div>
           </div>
           
           <div class="route-info-content">
@@ -418,7 +448,9 @@ export function App() {
               <div class="route-airport">
                 <div class="route-label">Origin</div>
                 <div class="route-name">{routeInfo.origin.iata}</div>
-                <div class="route-city">{routeInfo.origin.city}</div>
+                {(!isMobile || routeInfoExpanded) && (
+                  <div class="route-city">{routeInfo.origin.city}</div>
+                )}
               </div>
               
               <div class="route-arrow">→</div>
@@ -426,32 +458,36 @@ export function App() {
               <div class="route-airport">
                 <div class="route-label">Destination</div>
                 <div class="route-name">{routeInfo.destination.iata}</div>
-                <div class="route-city">{routeInfo.destination.city}</div>
+                {(!isMobile || routeInfoExpanded) && (
+                  <div class="route-city">{routeInfo.destination.city}</div>
+                )}
               </div>
             </div>
             
-            <div class="route-details">
-              <div class="route-detail-item">
-                <div class="route-detail-label">Distance</div>
-                <div class="route-detail-value">
-                  {routeInfo.distanceKm} km / {routeInfo.distanceMiles} mi
+            {(!isMobile || routeInfoExpanded) && (
+              <div class="route-details">
+                <div class="route-detail-item">
+                  <div class="route-detail-label">Distance</div>
+                  <div class="route-detail-value">
+                    {routeInfo.distanceKm} km / {routeInfo.distanceMiles} mi
+                  </div>
+                </div>
+                
+                <div class="route-detail-item">
+                  <div class="route-detail-label">Typical Flight Time</div>
+                  <div class="route-detail-value">
+                    {routeInfo.hours}h {routeInfo.minutes}m
+                  </div>
+                </div>
+                
+                <div class="route-detail-item">
+                  <div class="route-detail-label">Typical Aircraft</div>
+                  <div class="route-detail-value route-aircraft">
+                    {routeInfo.aircraft}
+                  </div>
                 </div>
               </div>
-              
-              <div class="route-detail-item">
-                <div class="route-detail-label">Typical Flight Time</div>
-                <div class="route-detail-value">
-                  {routeInfo.hours}h {routeInfo.minutes}m
-                </div>
-              </div>
-              
-              <div class="route-detail-item">
-                <div class="route-detail-label">Typical Aircraft</div>
-                <div class="route-detail-value route-aircraft">
-                  {routeInfo.aircraft}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
