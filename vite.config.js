@@ -1,9 +1,7 @@
 import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { readFileSync } from 'fs'
-
-const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
+import packageJson from './package.json'
 
 // https://vite.dev/config/
 export default defineConfig({
