@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.7] - 2025-12-30
+
+### Changed
+- Version bump for PR #19: Make search input mobile-friendly
+
 ## [0.0.6] - 2025-12-30
 
 ### Changed
