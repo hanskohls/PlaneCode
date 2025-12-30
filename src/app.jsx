@@ -182,11 +182,13 @@ export function App() {
         // Handle "Route to" link click
         marker.on('popupopen', () => {
           const popup = marker.getPopup().getElement()
-          const routeLink = popup.querySelector('.route-to-link')
-          if (routeLink) {
-            routeLink.onclick = (e) => {
-              e.preventDefault()
-              handleAirportSelect(airport)
+          if (popup) {
+            const routeLink = popup.querySelector('.route-to-link')
+            if (routeLink) {
+              routeLink.addEventListener('click', (e) => {
+                e.preventDefault()
+                handleAirportSelect(airport)
+              })
             }
           }
         })
