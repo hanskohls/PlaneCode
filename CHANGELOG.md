@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.3] - 2025-12-30
+
+### Changed
+- Version bump for PR #9: Add airport search with fullscreen map and proximity-based filtering
+
 ## [0.0.2] - 2025-12-30
 
 ### Changed
