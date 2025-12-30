@@ -79,8 +79,13 @@ export function App() {
 
   // Check if user is new and should see the tour
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour')
-    if (!hasSeenTour) {
+    try {
+      const hasSeenTour = localStorage.getItem('hasSeenTour')
+      if (!hasSeenTour) {
+        setShowTour(true)
+      }
+    } catch (err) {
+      // If localStorage is unavailable (e.g., private browsing), show the tour
       setShowTour(true)
     }
   }, [])
@@ -403,7 +408,13 @@ export function App() {
   const closeTour = (dontShowAgain = false) => {
     setShowTour(false)
     if (dontShowAgain) {
-      localStorage.setItem('hasSeenTour', 'true')
+      try {
+        localStorage.setItem('hasSeenTour', 'true')
+      } catch (err) {
+        // If localStorage is unavailable, silently fail
+        // Tour will show again on next visit
+        console.warn('Could not save tour preference:', err)
+      }
     }
   }
 
