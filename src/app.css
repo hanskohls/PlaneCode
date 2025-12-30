@@ -49,6 +49,36 @@
   fill: #333;
 }
 
+/* View Toggle Button */
+.view-toggle-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.view-toggle-button:hover {
+  background: #f5f5f5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.view-toggle-button svg {
+  width: 28px;
+  height: 28px;
+  fill: #333;
+}
+
 /* Mobile improvements */
 @media (max-width: 768px) {
   .search-button {
@@ -59,6 +89,18 @@
   .search-button svg {
     width: 36px;
     height: 36px;
+  }
+  
+  .view-toggle-button {
+    width: 56px;
+    height: 56px;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .view-toggle-button svg {
+    width: 32px;
+    height: 32px;
   }
   
   .search-overlay {

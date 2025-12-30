@@ -3,6 +3,7 @@ import L from 'leaflet'
 import * as turf from '@turf/turf'
 import 'leaflet/dist/leaflet.css'
 import './app.css'
+import { Globe } from './Globe.jsx'
 
 // Constants
 const KM_TO_MILES_CONVERSION = 0.621371
@@ -75,6 +76,8 @@ export function App() {
   const [routeInfo, setRouteInfo] = useState(null)
   const [routeInfoExpanded, setRouteInfoExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [viewMode, setViewMode] = useState('2d') // '2d' or '3d'
+  const [routeCoordinates, setRouteCoordinates] = useState([]) // Store route coordinates for globe
 
   // Load airports data
   useEffect(() => {
@@ -310,13 +313,7 @@ export function App() {
   }
 
   const createRoute = (origin, destination) => {
-    if (!mapRef.current) return
-
-    // Remove existing route line
-    if (routeLineRef.current) {
-      routeLineRef.current.remove()
-      routeLineRef.current = null
-    }
+    if (!mapRef.current && viewMode === '2d') return
 
     // Create route line using turf.js
     const from = turf.point([origin.lon, origin.lat])
@@ -330,15 +327,34 @@ export function App() {
     // Convert to Leaflet coordinates (reverse lat/lon)
     const coords = line.geometry.coordinates.map(coord => [coord[1], coord[0]])
     
-    // Draw the route on the map
-    const routeLine = L.polyline(coords, {
-      color: '#4285F4',
-      weight: 3,
-      opacity: 0.8,
-      dashArray: ROUTE_LINE_DASH_PATTERN
-    }).addTo(mapRef.current)
+    // Store coordinates for globe view
+    setRouteCoordinates(coords)
     
-    routeLineRef.current = routeLine
+    // Only draw on 2D map if in 2D mode
+    if (viewMode === '2d' && mapRef.current) {
+      // Remove existing route line
+      if (routeLineRef.current) {
+        routeLineRef.current.remove()
+        routeLineRef.current = null
+      }
+      
+      // Draw the route on the map
+      const routeLine = L.polyline(coords, {
+        color: '#4285F4',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: ROUTE_LINE_DASH_PATTERN
+      }).addTo(mapRef.current)
+      
+      routeLineRef.current = routeLine
+
+      // Fit map to show both airports
+      const bounds = L.latLngBounds([
+        [origin.lat, origin.lon],
+        [destination.lat, destination.lon]
+      ])
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] })
+    }
 
     // Calculate flight time
     const { hours, minutes, aircraft } = calculateFlightTime(distance)
@@ -353,13 +369,6 @@ export function App() {
       minutes,
       aircraft
     })
-
-    // Fit map to show both airports
-    const bounds = L.latLngBounds([
-      [origin.lat, origin.lon],
-      [destination.lat, destination.lon]
-    ])
-    mapRef.current.fitBounds(bounds, { padding: [50, 50] })
   }
 
   const clearRoute = () => {
@@ -378,6 +387,7 @@ export function App() {
     setDestinationAirport(null)
     setRouteInfo(null)
     setRouteInfoExpanded(false)
+    setRouteCoordinates([])
   }
 
   const handleSearchToggle = () => {
@@ -492,7 +502,38 @@ export function App() {
 
   return (
     <div class="app-container">
-      <div ref={mapContainer} class="map-container"></div>
+      {/* 2D Map View */}
+      {viewMode === '2d' && (
+        <div ref={mapContainer} class="map-container"></div>
+      )}
+      
+      {/* 3D Globe View */}
+      {viewMode === '3d' && (
+        <Globe 
+          airports={airports}
+          originAirport={originAirport}
+          destinationAirport={destinationAirport}
+          routeCoordinates={routeCoordinates}
+        />
+      )}
+      
+      {/* View Toggle Button */}
+      <button
+        class="view-toggle-button"
+        onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+        aria-label={`Switch to ${viewMode === '2d' ? '3D globe' : '2D map'} view`}
+        title={`Switch to ${viewMode === '2d' ? '3D globe' : '2D map'} view`}
+      >
+        {viewMode === '2d' ? (
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+          </svg>
+        )}
+      </button>
       
       {/* Route Info Box */}
       {routeInfo && (
