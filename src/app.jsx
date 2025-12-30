@@ -12,6 +12,7 @@ const MAX_VISIBLE_AIRPORTS = 20
 const MIN_ZOOM_FOR_MARKERS = 5
 const ZOOM_INCREMENT = 2
 const MIN_CLICK_ZOOM = 10
+const PRIVACY_POLICY_LAST_UPDATED = 'December 2025'
 
 // Airport level configuration
 const AIRPORT_LEVEL_CONFIG = {
@@ -66,6 +67,8 @@ export function App() {
   const markersRef = useRef([])
   const airportMarkersRef = useRef([]) // Markers for all airports on the map
   const routeLineRef = useRef(null)
+  const privacyButtonRef = useRef(null)
+  const privacyModalCloseRef = useRef(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [airports, setAirports] = useState([])
@@ -75,6 +78,7 @@ export function App() {
   const [routeInfo, setRouteInfo] = useState(null)
   const [routeInfoExpanded, setRouteInfoExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
   // Load airports data
   useEffect(() => {
@@ -121,6 +125,32 @@ export function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Handle privacy modal keyboard events and focus management
+  useEffect(() => {
+    if (showPrivacyModal) {
+      // Focus on close button when modal opens
+      if (privacyModalCloseRef.current) {
+        privacyModalCloseRef.current.focus()
+      }
+
+      // Handle escape key to close modal
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          setShowPrivacyModal(false)
+        }
+      }
+
+      document.addEventListener('keydown', handleEscape)
+      return () => {
+        document.removeEventListener('keydown', handleEscape)
+        // Return focus to privacy button when modal closes
+        if (privacyButtonRef.current) {
+          privacyButtonRef.current.focus()
+        }
+      }
+    }
+  }, [showPrivacyModal])
 
   // Memoize max level calculation to avoid recalculating on every render
   const maxLevel = useMemo(() => {
@@ -494,6 +524,84 @@ export function App() {
     <div class="app-container">
       <div ref={mapContainer} class="map-container"></div>
       
+      {/* Privacy Modal */}
+      {showPrivacyModal && (
+        <div 
+          class="privacy-modal-overlay" 
+          onClick={() => setShowPrivacyModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="privacy-modal-title"
+        >
+          <div class="privacy-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div class="privacy-modal-header">
+              <h2 id="privacy-modal-title">Privacy & Data Information</h2>
+              <button 
+                ref={privacyModalCloseRef}
+                class="privacy-modal-close" 
+                onClick={() => setShowPrivacyModal(false)}
+                aria-label="Close privacy information"
+              >
+                ×
+              </button>
+            </div>
+            <div class="privacy-modal-body">
+              <section>
+                <h3>🔒 Your Privacy is Protected</h3>
+                <p>
+                  PlaneCode is designed with privacy as a core principle. We are committed to protecting your personal information and complying with data protection regulations including GDPR (EU) and similar privacy laws.
+                </p>
+              </section>
+              
+              <section>
+                <h3>📊 No Tracking or Analytics</h3>
+                <p>
+                  We do not use any tracking, analytics, or monitoring services. Your browsing behavior, searches, and interactions with this application are never recorded, transmitted, or shared with any third parties.
+                </p>
+              </section>
+              
+              <section>
+                <h3>💾 Local Storage Only</h3>
+                <p>
+                  PlaneCode stores data only on your device for functionality purposes:
+                </p>
+                <ul>
+                  <li><strong>Map Tiles:</strong> OpenStreetMap tiles are cached locally using a service worker to enable offline viewing of previously visited map areas.</li>
+                  <li><strong>No Personal Data:</strong> We do not collect, store, or process any personal information, user accounts, or identifiable data.</li>
+                </ul>
+              </section>
+              
+              <section>
+                <h3>🍪 No Cookies</h3>
+                <p>
+                  This application does not use cookies or similar tracking technologies. All data remains on your device and is never transmitted to external servers except for loading map tiles from OpenStreetMap.
+                </p>
+              </section>
+              
+              <section>
+                <h3>🌐 Third-Party Services</h3>
+                <p>
+                  PlaneCode uses OpenStreetMap for map tiles, which are loaded directly from their servers. Please refer to <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer">OpenStreetMap's Privacy Policy</a> for information about their data practices.
+                </p>
+              </section>
+              
+              <section>
+                <h3>✅ Your Rights</h3>
+                <p>
+                  Since we do not collect or process any personal data, there is no data to access, correct, or delete. You can clear locally cached map tiles by clearing your browser's cache or uninstalling the application.
+                </p>
+              </section>
+              
+              <section class="privacy-modal-footer">
+                <p>
+                  <em>Last updated: {PRIVACY_POLICY_LAST_UPDATED}</em>
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Route Info Box */}
       {routeInfo && (
         <div class={`route-info-box ${routeInfoExpanded ? 'expanded' : ''}`}>
@@ -619,6 +727,18 @@ export function App() {
         >
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+        </button>
+        
+        <button
+          ref={privacyButtonRef}
+          class="privacy-button"
+          onClick={() => setShowPrivacyModal(true)}
+          aria-label="Privacy information"
+          title="Privacy & Data Information"
+        >
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
           </svg>
         </button>
       </div>
