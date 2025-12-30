@@ -12,6 +12,7 @@ const MAX_VISIBLE_AIRPORTS = 20
 const MIN_ZOOM_FOR_MARKERS = 5
 const ZOOM_INCREMENT = 2
 const MIN_CLICK_ZOOM = 10
+const PRIVACY_POLICY_LAST_UPDATED = 'December 2025'
 
 // Airport level configuration
 const AIRPORT_LEVEL_CONFIG = {
@@ -593,7 +594,7 @@ export function App() {
               
               <section class="privacy-modal-footer">
                 <p>
-                  <em>Last updated: December 2025</em>
+                  <em>Last updated: {PRIVACY_POLICY_LAST_UPDATED}</em>
                 </p>
               </section>
             </div>
