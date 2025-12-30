@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'fs'
+
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,6 +16,7 @@ export default defineConfig({
         name: 'PlaneCode - Globe Viewer',
         short_name: 'PlaneCode',
         description: 'A minimal Vite + Preact application with an interactive globe/map viewer',
+        version: packageJson.version,
         theme_color: '#667eea',
         background_color: '#ffffff',
         display: 'standalone',
