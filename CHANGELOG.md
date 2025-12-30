@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.12] - 2025-12-30
+
+### Changed
+- Version bump for PR #31: Increase logo stroke widths for mobile visibility
+
 ## [0.0.11] - 2025-12-30
 
 ### Changed
