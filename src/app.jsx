@@ -163,7 +163,7 @@ export function App() {
             <strong>${airport.name}</strong><br/>
             ${airport.city}, ${airport.country}<br/>
             ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
-            <a href="#" class="route-to-link" data-airport-icao="${airport.icao}">Route to →</a>
+            <a href="#" class="route-to-link">Route to →</a>
           </div>
         `
 
@@ -180,15 +180,27 @@ export function App() {
         })
 
         // Handle "Route to" link click
+        const handleRouteLinkClick = (e) => {
+          e.preventDefault()
+          handleAirportSelect(airport)
+        }
+        
         marker.on('popupopen', () => {
           const popup = marker.getPopup().getElement()
           if (popup) {
             const routeLink = popup.querySelector('.route-to-link')
             if (routeLink) {
-              routeLink.addEventListener('click', (e) => {
-                e.preventDefault()
-                handleAirportSelect(airport)
-              })
+              routeLink.addEventListener('click', handleRouteLinkClick)
+            }
+          }
+        })
+        
+        marker.on('popupclose', () => {
+          const popup = marker.getPopup().getElement()
+          if (popup) {
+            const routeLink = popup.querySelector('.route-to-link')
+            if (routeLink) {
+              routeLink.removeEventListener('click', handleRouteLinkClick)
             }
           }
         })
