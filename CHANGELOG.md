@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.9] - 2025-12-30
+
+### Changed
+- Version bump for PR #23: Fix route marker visibility, popup persistence, and inconsistent formatting
+
 ## [0.0.8] - 2025-12-30
 
 ### Changed
