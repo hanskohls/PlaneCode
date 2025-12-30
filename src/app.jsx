@@ -31,6 +31,27 @@ const createMarkerStyles = (iconSize, iconColor) => {
     cursor: pointer;`
 }
 
+// Helper function to create route endpoint marker styles
+const createRouteMarkerIcon = (type) => {
+  const isOrigin = type === 'origin'
+  const color = isOrigin ? '#10b981' : '#ef4444' // green for origin, red for destination
+  const size = 16
+  
+  return L.divIcon({
+    className: 'route-marker',
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      background-color: ${color};
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    "></div>`,
+    iconSize: [size + 6, size + 6],
+    iconAnchor: [(size + 6) / 2, (size + 6) / 2]
+  })
+}
+
 // Aircraft configuration based on distance
 const AIRCRAFT_CONFIG = [
   { maxDistance: 500, name: 'Regional Jet (e.g., Embraer E175)', speedKmh: 700 },
@@ -113,9 +134,16 @@ export function App() {
     const map = mapRef.current
 
     const updateAirportMarkers = () => {
-      // Clear existing airport markers
-      airportMarkersRef.current.forEach(marker => marker.remove())
-      airportMarkersRef.current = []
+      // Save markers with open popups to preserve them
+      const markersToPreserve = airportMarkersRef.current.filter(marker => marker.isPopupOpen())
+      
+      // Clear existing airport markers except those with open popups
+      airportMarkersRef.current.forEach(marker => {
+        if (!marker.isPopupOpen()) {
+          marker.remove()
+        }
+      })
+      airportMarkersRef.current = [...markersToPreserve]
 
       // Get map bounds and zoom
       const bounds = map.getBounds()
@@ -144,8 +172,14 @@ export function App() {
         airportsToShow = airportsToShow.slice(0, MAX_VISIBLE_AIRPORTS)
       }
 
-      // Create markers for airports to show
+      // Get ICAOs of airports that already have markers (preserved)
+      const preservedICAOs = new Set(markersToPreserve.map(m => m._airportData?.icao).filter(Boolean))
+
+      // Create markers for airports to show (excluding already preserved ones)
       airportsToShow.forEach(airport => {
+        // Skip if this airport already has a preserved marker
+        if (preservedICAOs.has(airport.icao)) return
+        
         // Get icon configuration based on level
         const config = AIRPORT_LEVEL_CONFIG[airport.level] || AIRPORT_LEVEL_CONFIG.default
         const iconSize = config.size
@@ -170,14 +204,9 @@ export function App() {
         const marker = L.marker([airport.lat, airport.lon], { icon })
           .addTo(map)
           .bindPopup(popupContent)
-
-        // Make marker clickable to zoom in
-        marker.on('click', () => {
-          map.setView([airport.lat, airport.lon], Math.max(zoom + ZOOM_INCREMENT, MIN_CLICK_ZOOM), {
-            animate: true,
-            duration: 0.5
-          })
-        })
+        
+        // Store reference to prevent removal during updates
+        marker._airportData = airport
 
         // Handle "Route to" link click
         const handleRouteLinkClick = (e) => {
@@ -365,14 +394,17 @@ export function App() {
         markersRef.current.forEach(marker => marker.remove())
         markersRef.current = []
 
-        // Add marker for origin airport
-        const marker = L.marker([airport.lat, airport.lon])
+        // Add marker for origin airport with custom icon
+        const originIcon = createRouteMarkerIcon('origin')
+        const marker = L.marker([airport.lat, airport.lon], { icon: originIcon })
           .addTo(mapRef.current)
           .bindPopup(`
-            <strong>${airport.name}</strong><br/>
-            ${airport.city}, ${airport.country}<br/>
-            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
-            <em>Origin Airport</em>
+            <div class="airport-popup">
+              <strong>${airport.name}</strong><br/>
+              ${airport.city}, ${airport.country}<br/>
+              ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+              <em>Origin Airport</em>
+            </div>
           `)
           .openPopup()
 
@@ -393,14 +425,17 @@ export function App() {
       } 
       // If origin is selected but no destination, set this as destination
       else if (!destinationAirport) {
-        // Add marker for destination airport
-        const marker = L.marker([airport.lat, airport.lon])
+        // Add marker for destination airport with custom icon
+        const destinationIcon = createRouteMarkerIcon('destination')
+        const marker = L.marker([airport.lat, airport.lon], { icon: destinationIcon })
           .addTo(mapRef.current)
           .bindPopup(`
-            <strong>${airport.name}</strong><br/>
-            ${airport.city}, ${airport.country}<br/>
-            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
-            <em>Destination Airport</em>
+            <div class="airport-popup">
+              <strong>${airport.name}</strong><br/>
+              ${airport.city}, ${airport.country}<br/>
+              ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+              <em>Destination Airport</em>
+            </div>
           `)
           .openPopup()
 
@@ -421,14 +456,17 @@ export function App() {
         // Clear everything and start fresh
         clearRoute()
         
-        // Set this as new origin
-        const marker = L.marker([airport.lat, airport.lon])
+        // Set this as new origin with custom icon
+        const originIcon = createRouteMarkerIcon('origin')
+        const marker = L.marker([airport.lat, airport.lon], { icon: originIcon })
           .addTo(mapRef.current)
           .bindPopup(`
-            <strong>${airport.name}</strong><br/>
-            ${airport.city}, ${airport.country}<br/>
-            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
-            <em>Origin Airport</em>
+            <div class="airport-popup">
+              <strong>${airport.name}</strong><br/>
+              ${airport.city}, ${airport.country}<br/>
+              ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+              <em>Origin Airport</em>
+            </div>
           `)
           .openPopup()
 
