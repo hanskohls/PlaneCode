@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.8] - 2025-12-30
+
+### Changed
+- Version bump for PR #20: Add collapsible route information panel for mobile views
+
 ## [0.0.7] - 2025-12-30
 
 ### Changed
