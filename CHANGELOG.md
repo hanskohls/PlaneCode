@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.5] - 2025-12-30
+
+### Changed
+- Version bump for PR #13: Implement route search with distance calculation and aircraft recommendations
+
 ## [0.0.4] - 2025-12-30
 
 ### Changed
