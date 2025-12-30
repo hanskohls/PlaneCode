@@ -66,6 +66,8 @@ export function App() {
   const markersRef = useRef([])
   const airportMarkersRef = useRef([]) // Markers for all airports on the map
   const routeLineRef = useRef(null)
+  const privacyButtonRef = useRef(null)
+  const privacyModalCloseRef = useRef(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [airports, setAirports] = useState([])
@@ -122,6 +124,32 @@ export function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Handle privacy modal keyboard events and focus management
+  useEffect(() => {
+    if (showPrivacyModal) {
+      // Focus on close button when modal opens
+      if (privacyModalCloseRef.current) {
+        privacyModalCloseRef.current.focus()
+      }
+
+      // Handle escape key to close modal
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          setShowPrivacyModal(false)
+        }
+      }
+
+      document.addEventListener('keydown', handleEscape)
+      return () => {
+        document.removeEventListener('keydown', handleEscape)
+        // Return focus to privacy button when modal closes
+        if (privacyButtonRef.current) {
+          privacyButtonRef.current.focus()
+        }
+      }
+    }
+  }, [showPrivacyModal])
 
   // Memoize max level calculation to avoid recalculating on every render
   const maxLevel = useMemo(() => {
@@ -497,11 +525,18 @@ export function App() {
       
       {/* Privacy Modal */}
       {showPrivacyModal && (
-        <div class="privacy-modal-overlay" onClick={() => setShowPrivacyModal(false)}>
+        <div 
+          class="privacy-modal-overlay" 
+          onClick={() => setShowPrivacyModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="privacy-modal-title"
+        >
           <div class="privacy-modal-content" onClick={(e) => e.stopPropagation()}>
             <div class="privacy-modal-header">
-              <h2>Privacy & Data Information</h2>
+              <h2 id="privacy-modal-title">Privacy & Data Information</h2>
               <button 
+                ref={privacyModalCloseRef}
                 class="privacy-modal-close" 
                 onClick={() => setShowPrivacyModal(false)}
                 aria-label="Close privacy information"
@@ -695,6 +730,7 @@ export function App() {
         </button>
         
         <button
+          ref={privacyButtonRef}
           class="privacy-button"
           onClick={() => setShowPrivacyModal(true)}
           aria-label="Privacy information"
