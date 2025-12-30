@@ -8,6 +8,15 @@ import './app.css'
 const KM_TO_MILES_CONVERSION = 0.621371
 const TAXI_TAKEOFF_LANDING_HOURS = 0.5
 const ROUTE_LINE_DASH_PATTERN = '10, 10'
+const MAX_VISIBLE_AIRPORTS = 20
+const MIN_ZOOM_FOR_MARKERS = 5
+
+// Airport level configuration
+const AIRPORT_LEVEL_CONFIG = {
+  1: { size: 10, color: '#FF4444' },
+  2: { size: 8, color: '#4285F4' },
+  default: { size: 6, color: '#888888' }
+}
 
 // Aircraft configuration based on distance
 const AIRCRAFT_CONFIG = [
@@ -73,6 +82,9 @@ export function App() {
 
     const map = mapRef.current
 
+    // Calculate max level dynamically from airport data
+    const maxLevel = airports.reduce((max, airport) => Math.max(max, airport.level || 1), 1)
+
     const updateAirportMarkers = () => {
       // Clear existing airport markers
       airportMarkersRef.current.forEach(marker => marker.remove())
@@ -82,8 +94,8 @@ export function App() {
       const bounds = map.getBounds()
       const zoom = map.getZoom()
 
-      // Only show markers when zoomed in enough (zoom level 5 or higher)
-      if (zoom < 5) return
+      // Only show markers when zoomed in enough
+      if (zoom < MIN_ZOOM_FOR_MARKERS) return
 
       // Get airports in current view
       const visibleAirports = airports.filter(airport => {
@@ -93,25 +105,24 @@ export function App() {
       // Determine which levels to show based on count
       let airportsToShow = []
       let currentLevel = 1
-      const maxAirports = 20
-      const maxLevel = 77 // Maximum level in the dataset
 
-      while (airportsToShow.length < maxAirports && currentLevel <= maxLevel) {
+      while (airportsToShow.length < MAX_VISIBLE_AIRPORTS && currentLevel <= maxLevel) {
         const levelAirports = visibleAirports.filter(a => a.level === currentLevel)
         airportsToShow = airportsToShow.concat(levelAirports)
         currentLevel++
       }
 
-      // If we still have too many, prioritize by level and limit to 20
-      if (airportsToShow.length > maxAirports) {
-        airportsToShow = airportsToShow.slice(0, maxAirports)
+      // If we still have too many, prioritize by level and limit
+      if (airportsToShow.length > MAX_VISIBLE_AIRPORTS) {
+        airportsToShow = airportsToShow.slice(0, MAX_VISIBLE_AIRPORTS)
       }
 
       // Create markers for airports to show
       airportsToShow.forEach(airport => {
-        // Create custom icon based on level
-        const iconSize = airport.level === 1 ? 10 : airport.level === 2 ? 8 : 6
-        const iconColor = airport.level === 1 ? '#FF4444' : airport.level === 2 ? '#4285F4' : '#888888'
+        // Get icon configuration based on level
+        const config = AIRPORT_LEVEL_CONFIG[airport.level] || AIRPORT_LEVEL_CONFIG.default
+        const iconSize = config.size
+        const iconColor = config.color
         
         const icon = L.divIcon({
           className: 'airport-marker',
