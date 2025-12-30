@@ -199,8 +199,12 @@ export function Globe({
     // Add origin marker
     if (originAirport) {
       const position = latLonToVector3(originAirport.lat, originAirport.lon, EARTH_RADIUS + MARKER_HEIGHT)
-      const geometry = new THREE.SphereGeometry(1.5, 16, 16)
-      const material = new THREE.MeshBasicMaterial({ color: 0x10b981 }) // green
+      const geometry = new THREE.SphereGeometry(2, 16, 16)
+      const material = new THREE.MeshBasicMaterial({ 
+        color: 0x10b981,
+        transparent: true,
+        opacity: 0.9
+      })
       const marker = new THREE.Mesh(geometry, material)
       marker.position.copy(position)
       marker.rotation.y = earthRef.current.rotation.y
@@ -212,8 +216,12 @@ export function Globe({
     // Add destination marker
     if (destinationAirport) {
       const position = latLonToVector3(destinationAirport.lat, destinationAirport.lon, EARTH_RADIUS + MARKER_HEIGHT)
-      const geometry = new THREE.SphereGeometry(1.5, 16, 16)
-      const material = new THREE.MeshBasicMaterial({ color: 0xef4444 }) // red
+      const geometry = new THREE.SphereGeometry(2, 16, 16)
+      const material = new THREE.MeshBasicMaterial({ 
+        color: 0xef4444,
+        transparent: true,
+        opacity: 0.9
+      })
       const marker = new THREE.Mesh(geometry, material)
       marker.position.copy(position)
       marker.rotation.y = earthRef.current.rotation.y
@@ -235,6 +243,7 @@ export function Globe({
 
     // Add new route line if coordinates exist
     if (routeCoordinates && routeCoordinates.length > 0) {
+      // Generate more points for a smoother curve
       const points = routeCoordinates.map(coord => 
         latLonToVector3(coord[0], coord[1], EARTH_RADIUS + ROUTE_HEIGHT)
       )
@@ -242,9 +251,9 @@ export function Globe({
       const geometry = new THREE.BufferGeometry().setFromPoints(points)
       const material = new THREE.LineBasicMaterial({ 
         color: 0x4285F4,
-        linewidth: 2,
+        linewidth: 3,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.9
       })
       const line = new THREE.Line(geometry, material)
       line.rotation.y = earthRef.current.rotation.y
