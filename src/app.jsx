@@ -158,13 +158,18 @@ export function App() {
           iconAnchor: [(iconSize + 4) / 2, (iconSize + 4) / 2]
         })
 
-        const marker = L.marker([airport.lat, airport.lon], { icon })
-          .addTo(map)
-          .bindPopup(`
+        const popupContent = `
+          <div class="airport-popup">
             <strong>${airport.name}</strong><br/>
             ${airport.city}, ${airport.country}<br/>
-            ICAO: ${airport.icao} | IATA: ${airport.iata}
-          `)
+            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+            <a href="#" class="route-to-link" data-airport-icao="${airport.icao}">Route to →</a>
+          </div>
+        `
+
+        const marker = L.marker([airport.lat, airport.lon], { icon })
+          .addTo(map)
+          .bindPopup(popupContent)
 
         // Make marker clickable to zoom in
         marker.on('click', () => {
@@ -172,6 +177,18 @@ export function App() {
             animate: true,
             duration: 0.5
           })
+        })
+
+        // Handle "Route to" link click
+        marker.on('popupopen', () => {
+          const popup = marker.getPopup().getElement()
+          const routeLink = popup.querySelector('.route-to-link')
+          if (routeLink) {
+            routeLink.onclick = (e) => {
+              e.preventDefault()
+              handleAirportSelect(airport)
+            }
+          }
         })
 
         airportMarkersRef.current.push(marker)
