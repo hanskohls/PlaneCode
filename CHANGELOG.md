@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.4] - 2025-12-30
+
+### Changed
+- Version bump for PR #12: Configure Fly.io for minimum cost: 256MB RAM, auto-suspend
+
 ## [0.0.3] - 2025-12-30
 
 ### Changed
