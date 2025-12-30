@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.10] - 2025-12-30
+
+### Changed
+- Version bump for PR #29: Add GDPR-compliant privacy documentation modal
+
 ## [0.0.9] - 2025-12-30
 
 ### Changed
