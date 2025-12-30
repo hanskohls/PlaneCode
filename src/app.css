@@ -44,9 +44,22 @@
 }
 
 .search-button svg {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   fill: #333;
+}
+
+/* Mobile improvements */
+@media (max-width: 768px) {
+  .search-button {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .search-button svg {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .search-input-container {

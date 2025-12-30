@@ -21,6 +21,7 @@ export function App() {
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const airportMarkersRef = useRef([]) // Markers for all airports on the map
   const routeLineRef = useRef(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -65,6 +66,103 @@ export function App() {
       map.remove()
     }
   }, [])
+
+  // Update airport markers based on map position and zoom
+  useEffect(() => {
+    if (!mapRef.current || airports.length === 0) return
+
+    const map = mapRef.current
+
+    const updateAirportMarkers = () => {
+      // Clear existing airport markers
+      airportMarkersRef.current.forEach(marker => marker.remove())
+      airportMarkersRef.current = []
+
+      // Get map bounds and zoom
+      const bounds = map.getBounds()
+      const zoom = map.getZoom()
+
+      // Only show markers when zoomed in enough (zoom level 5 or higher)
+      if (zoom < 5) return
+
+      // Get airports in current view
+      const visibleAirports = airports.filter(airport => {
+        return bounds.contains([airport.lat, airport.lon])
+      })
+
+      // Determine which levels to show based on count
+      let airportsToShow = []
+      let currentLevel = 1
+      const maxAirports = 20
+      const maxLevel = 77 // Maximum level in the dataset
+
+      while (airportsToShow.length < maxAirports && currentLevel <= maxLevel) {
+        const levelAirports = visibleAirports.filter(a => a.level === currentLevel)
+        airportsToShow = airportsToShow.concat(levelAirports)
+        currentLevel++
+      }
+
+      // If we still have too many, prioritize by level and limit to 20
+      if (airportsToShow.length > maxAirports) {
+        airportsToShow = airportsToShow.slice(0, maxAirports)
+      }
+
+      // Create markers for airports to show
+      airportsToShow.forEach(airport => {
+        // Create custom icon based on level
+        const iconSize = airport.level === 1 ? 10 : airport.level === 2 ? 8 : 6
+        const iconColor = airport.level === 1 ? '#FF4444' : airport.level === 2 ? '#4285F4' : '#888888'
+        
+        const icon = L.divIcon({
+          className: 'airport-marker',
+          html: `<div style="
+            width: ${iconSize}px;
+            height: ${iconSize}px;
+            background-color: ${iconColor};
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+          "></div>`,
+          iconSize: [iconSize + 4, iconSize + 4],
+          iconAnchor: [(iconSize + 4) / 2, (iconSize + 4) / 2]
+        })
+
+        const marker = L.marker([airport.lat, airport.lon], { icon })
+          .addTo(map)
+          .bindPopup(`
+            <strong>${airport.name}</strong><br/>
+            ${airport.city}, ${airport.country}<br/>
+            ICAO: ${airport.icao} | IATA: ${airport.iata}
+          `)
+
+        // Make marker clickable to zoom in
+        marker.on('click', () => {
+          map.setView([airport.lat, airport.lon], Math.max(zoom + 2, 10), {
+            animate: true,
+            duration: 0.5
+          })
+        })
+
+        airportMarkersRef.current.push(marker)
+      })
+    }
+
+    // Update markers initially
+    updateAirportMarkers()
+
+    // Update markers on map move or zoom
+    map.on('moveend', updateAirportMarkers)
+    map.on('zoomend', updateAirportMarkers)
+
+    // Cleanup
+    return () => {
+      map.off('moveend', updateAirportMarkers)
+      map.off('zoomend', updateAirportMarkers)
+      airportMarkersRef.current.forEach(marker => marker.remove())
+      airportMarkersRef.current = []
+    }
+  }, [airports])
 
   // Filter airports based on search query and map center
   useEffect(() => {
