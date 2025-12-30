@@ -4,6 +4,19 @@ import * as turf from '@turf/turf'
 import 'leaflet/dist/leaflet.css'
 import './app.css'
 
+// Constants
+const KM_TO_MILES_CONVERSION = 0.621371
+const TAXI_TAKEOFF_LANDING_HOURS = 0.5
+const ROUTE_LINE_DASH_PATTERN = '10, 10'
+
+// Aircraft configuration based on distance
+const AIRCRAFT_CONFIG = [
+  { maxDistance: 500, name: 'Regional Jet (e.g., Embraer E175)', speedKmh: 700 },
+  { maxDistance: 1500, name: 'Narrow Body (e.g., Boeing 737, Airbus A320)', speedKmh: 800 },
+  { maxDistance: 6000, name: 'Wide Body (e.g., Boeing 787, Airbus A350)', speedKmh: 900 },
+  { maxDistance: Infinity, name: 'Large Wide Body (e.g., Boeing 777, Airbus A380)', speedKmh: 920 }
+]
+
 export function App() {
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
@@ -91,29 +104,12 @@ export function App() {
   // Calculate flight time based on distance and typical aircraft speed
   const calculateFlightTime = (distanceKm) => {
     // Determine typical aircraft and speed based on distance
-    let aircraft = ''
-    let speedKmh = 0
+    const config = AIRCRAFT_CONFIG.find(cfg => distanceKm < cfg.maxDistance)
+    const aircraft = config.name
+    const speedKmh = config.speedKmh
     
-    if (distanceKm < 500) {
-      // Short haul - Regional jets
-      aircraft = 'Regional Jet (e.g., Embraer E175)'
-      speedKmh = 700
-    } else if (distanceKm < 1500) {
-      // Medium haul - Narrow body jets
-      aircraft = 'Narrow Body (e.g., Boeing 737, Airbus A320)'
-      speedKmh = 800
-    } else if (distanceKm < 6000) {
-      // Long haul - Wide body jets
-      aircraft = 'Wide Body (e.g., Boeing 787, Airbus A350)'
-      speedKmh = 900
-    } else {
-      // Ultra long haul - Large wide body jets
-      aircraft = 'Large Wide Body (e.g., Boeing 777, Airbus A380)'
-      speedKmh = 920
-    }
-    
-    // Calculate flight time in hours (add ~30 minutes for taxi, takeoff, landing)
-    const flightTimeHours = (distanceKm / speedKmh) + 0.5
+    // Calculate flight time in hours (add time for taxi, takeoff, landing)
+    const flightTimeHours = (distanceKm / speedKmh) + TAXI_TAKEOFF_LANDING_HOURS
     const hours = Math.floor(flightTimeHours)
     const minutes = Math.round((flightTimeHours - hours) * 60)
     
@@ -133,7 +129,7 @@ export function App() {
     const from = turf.point([origin.lon, origin.lat])
     const to = turf.point([destination.lon, destination.lat])
     const distance = turf.distance(from, to, { units: 'kilometers' })
-    const distanceMiles = distance * 0.621371
+    const distanceMiles = distance * KM_TO_MILES_CONVERSION
 
     // Create a great circle route line
     const line = turf.greatCircle(from, to)
@@ -146,7 +142,7 @@ export function App() {
       color: '#4285F4',
       weight: 3,
       opacity: 0.8,
-      dashArray: '10, 10'
+      dashArray: ROUTE_LINE_DASH_PATTERN
     }).addTo(mapRef.current)
     
     routeLineRef.current = routeLine
