@@ -1,16 +1,34 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import L from 'leaflet'
+import * as turf from '@turf/turf'
 import 'leaflet/dist/leaflet.css'
 import './app.css'
+
+// Constants
+const KM_TO_MILES_CONVERSION = 0.621371
+const TAXI_TAKEOFF_LANDING_HOURS = 0.5
+const ROUTE_LINE_DASH_PATTERN = '10, 10'
+
+// Aircraft configuration based on distance
+const AIRCRAFT_CONFIG = [
+  { maxDistance: 500, name: 'Regional Jet (e.g., Embraer E175)', speedKmh: 700 },
+  { maxDistance: 1500, name: 'Narrow Body (e.g., Boeing 737, Airbus A320)', speedKmh: 800 },
+  { maxDistance: 6000, name: 'Wide Body (e.g., Boeing 787, Airbus A350)', speedKmh: 900 },
+  { maxDistance: Infinity, name: 'Large Wide Body (e.g., Boeing 777, Airbus A380)', speedKmh: 920 }
+]
 
 export function App() {
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const routeLineRef = useRef(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [airports, setAirports] = useState([])
   const [filteredAirports, setFilteredAirports] = useState([])
+  const [originAirport, setOriginAirport] = useState(null)
+  const [destinationAirport, setDestinationAirport] = useState(null)
+  const [routeInfo, setRouteInfo] = useState(null)
 
   // Load airports data
   useEffect(() => {
@@ -83,6 +101,91 @@ export function App() {
     setFilteredAirports(results.slice(0, 10))
   }, [searchQuery, airports, searchOpen])
 
+  // Calculate flight time based on distance and typical aircraft speed
+  const calculateFlightTime = (distanceKm) => {
+    // Determine typical aircraft and speed based on distance
+    const config = AIRCRAFT_CONFIG.find(cfg => distanceKm < cfg.maxDistance)
+    const aircraft = config.name
+    const speedKmh = config.speedKmh
+    
+    // Calculate flight time in hours (add time for taxi, takeoff, landing)
+    const flightTimeHours = (distanceKm / speedKmh) + TAXI_TAKEOFF_LANDING_HOURS
+    const hours = Math.floor(flightTimeHours)
+    const minutes = Math.round((flightTimeHours - hours) * 60)
+    
+    return { hours, minutes, aircraft }
+  }
+
+  const createRoute = (origin, destination) => {
+    if (!mapRef.current) return
+
+    // Remove existing route line
+    if (routeLineRef.current) {
+      routeLineRef.current.remove()
+      routeLineRef.current = null
+    }
+
+    // Create route line using turf.js
+    const from = turf.point([origin.lon, origin.lat])
+    const to = turf.point([destination.lon, destination.lat])
+    const distance = turf.distance(from, to, { units: 'kilometers' })
+    const distanceMiles = distance * KM_TO_MILES_CONVERSION
+
+    // Create a great circle route line
+    const line = turf.greatCircle(from, to)
+    
+    // Convert to Leaflet coordinates (reverse lat/lon)
+    const coords = line.geometry.coordinates.map(coord => [coord[1], coord[0]])
+    
+    // Draw the route on the map
+    const routeLine = L.polyline(coords, {
+      color: '#4285F4',
+      weight: 3,
+      opacity: 0.8,
+      dashArray: ROUTE_LINE_DASH_PATTERN
+    }).addTo(mapRef.current)
+    
+    routeLineRef.current = routeLine
+
+    // Calculate flight time
+    const { hours, minutes, aircraft } = calculateFlightTime(distance)
+
+    // Set route info
+    setRouteInfo({
+      origin,
+      destination,
+      distanceKm: distance.toFixed(0),
+      distanceMiles: distanceMiles.toFixed(0),
+      hours,
+      minutes,
+      aircraft
+    })
+
+    // Fit map to show both airports
+    const bounds = L.latLngBounds([
+      [origin.lat, origin.lon],
+      [destination.lat, destination.lon]
+    ])
+    mapRef.current.fitBounds(bounds, { padding: [50, 50] })
+  }
+
+  const clearRoute = () => {
+    // Clear route line
+    if (routeLineRef.current) {
+      routeLineRef.current.remove()
+      routeLineRef.current = null
+    }
+
+    // Clear markers
+    markersRef.current.forEach(marker => marker.remove())
+    markersRef.current = []
+
+    // Clear state
+    setOriginAirport(null)
+    setDestinationAirport(null)
+    setRouteInfo(null)
+  }
+
   const handleSearchToggle = () => {
     setSearchOpen(!searchOpen)
     if (searchOpen) {
@@ -92,31 +195,91 @@ export function App() {
 
   const handleAirportSelect = (airport) => {
     if (mapRef.current) {
-      // Clear existing markers
-      markersRef.current.forEach(marker => marker.remove())
-      markersRef.current = []
+      // If no origin is selected, set this as origin
+      if (!originAirport) {
+        // Clear existing markers
+        markersRef.current.forEach(marker => marker.remove())
+        markersRef.current = []
 
-      // Add marker for selected airport
-      const marker = L.marker([airport.lat, airport.lon])
-        .addTo(mapRef.current)
-        .bindPopup(`
-          <strong>${airport.name}</strong><br/>
-          ${airport.city}, ${airport.country}<br/>
-          ICAO: ${airport.icao} | IATA: ${airport.iata}
-        `)
-        .openPopup()
+        // Add marker for origin airport
+        const marker = L.marker([airport.lat, airport.lon])
+          .addTo(mapRef.current)
+          .bindPopup(`
+            <strong>${airport.name}</strong><br/>
+            ${airport.city}, ${airport.country}<br/>
+            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+            <em>Origin Airport</em>
+          `)
+          .openPopup()
 
-      markersRef.current.push(marker)
+        markersRef.current.push(marker)
 
-      // Zoom to airport
-      mapRef.current.setView([airport.lat, airport.lon], 12, {
-        animate: true,
-        duration: 1
-      })
+        // Zoom to airport
+        mapRef.current.setView([airport.lat, airport.lon], 8, {
+          animate: true,
+          duration: 1
+        })
 
-      // Close search
-      setSearchOpen(false)
-      setSearchQuery('')
+        // Set as origin
+        setOriginAirport(airport)
+
+        // Close search but don't clear query to allow easy second search
+        setSearchOpen(false)
+        setSearchQuery('')
+      } 
+      // If origin is selected but no destination, set this as destination
+      else if (!destinationAirport) {
+        // Add marker for destination airport
+        const marker = L.marker([airport.lat, airport.lon])
+          .addTo(mapRef.current)
+          .bindPopup(`
+            <strong>${airport.name}</strong><br/>
+            ${airport.city}, ${airport.country}<br/>
+            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+            <em>Destination Airport</em>
+          `)
+          .openPopup()
+
+        markersRef.current.push(marker)
+
+        // Set as destination
+        setDestinationAirport(airport)
+
+        // Create route between origin and destination
+        createRoute(originAirport, airport)
+
+        // Close search
+        setSearchOpen(false)
+        setSearchQuery('')
+      }
+      // If both are selected, replace the route with a new one starting from this airport
+      else {
+        // Clear everything and start fresh
+        clearRoute()
+        
+        // Set this as new origin
+        const marker = L.marker([airport.lat, airport.lon])
+          .addTo(mapRef.current)
+          .bindPopup(`
+            <strong>${airport.name}</strong><br/>
+            ${airport.city}, ${airport.country}<br/>
+            ICAO: ${airport.icao} | IATA: ${airport.iata}<br/>
+            <em>Origin Airport</em>
+          `)
+          .openPopup()
+
+        markersRef.current.push(marker)
+
+        // Zoom to airport
+        mapRef.current.setView([airport.lat, airport.lon], 8, {
+          animate: true,
+          duration: 1
+        })
+
+        setOriginAirport(airport)
+        setSearchOpen(false)
+        setSearchQuery('')
+      }
     }
   }
 
@@ -124,13 +287,70 @@ export function App() {
     <div class="app-container">
       <div ref={mapContainer} class="map-container"></div>
       
+      {/* Route Info Box */}
+      {routeInfo && (
+        <div class="route-info-box">
+          <div class="route-info-header">
+            <h3>Route Information</h3>
+            <button class="close-button" onClick={clearRoute} aria-label="Clear route">
+              ×
+            </button>
+          </div>
+          
+          <div class="route-info-content">
+            <div class="route-airports">
+              <div class="route-airport">
+                <div class="route-label">Origin</div>
+                <div class="route-name">{routeInfo.origin.iata}</div>
+                <div class="route-city">{routeInfo.origin.city}</div>
+              </div>
+              
+              <div class="route-arrow">→</div>
+              
+              <div class="route-airport">
+                <div class="route-label">Destination</div>
+                <div class="route-name">{routeInfo.destination.iata}</div>
+                <div class="route-city">{routeInfo.destination.city}</div>
+              </div>
+            </div>
+            
+            <div class="route-details">
+              <div class="route-detail-item">
+                <div class="route-detail-label">Distance</div>
+                <div class="route-detail-value">
+                  {routeInfo.distanceKm} km / {routeInfo.distanceMiles} mi
+                </div>
+              </div>
+              
+              <div class="route-detail-item">
+                <div class="route-detail-label">Typical Flight Time</div>
+                <div class="route-detail-value">
+                  {routeInfo.hours}h {routeInfo.minutes}m
+                </div>
+              </div>
+              
+              <div class="route-detail-item">
+                <div class="route-detail-label">Typical Aircraft</div>
+                <div class="route-detail-value route-aircraft">
+                  {routeInfo.aircraft}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div class="search-overlay">
         {searchOpen && (
           <div class="search-input-container">
             <input
               type="text"
               class="search-input"
-              placeholder="Search by city, airport, ICAO, or IATA code..."
+              placeholder={
+                originAirport && !destinationAirport
+                  ? "Search for destination airport..."
+                  : "Search by city, airport, ICAO, or IATA code..."
+              }
               value={searchQuery}
               onInput={(e) => setSearchQuery(e.target.value)}
               autoFocus
