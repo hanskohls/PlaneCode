@@ -8,7 +8,7 @@ export default defineConfig({
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'vite.svg'],
+      includeAssets: ['icon.svg'],
       manifest: {
         name: 'PlaneCode - Globe Viewer',
         short_name: 'PlaneCode',
