@@ -173,7 +173,11 @@ export function App() {
       }
 
       // Get ICAOs of airports that already have markers (preserved)
-      const preservedICAOs = new Set(markersToPreserve.map(m => m._airportData?.icao).filter(Boolean))
+      const preservedICAOs = new Set(
+        markersToPreserve
+          .map(m => m._airportData?.icao)
+          .filter(icao => icao !== undefined)
+      )
 
       // Create markers for airports to show (excluding already preserved ones)
       airportsToShow.forEach(airport => {
@@ -205,7 +209,8 @@ export function App() {
           .addTo(map)
           .bindPopup(popupContent)
         
-        // Store reference to prevent removal during updates
+        // Store airport data on marker for identification during updates
+        // This allows the popup preservation logic to track which airport a marker represents
         marker._airportData = airport
 
         // Handle "Route to" link click
