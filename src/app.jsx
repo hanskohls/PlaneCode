@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState, useMemo } from 'preact/hooks'
 import L from 'leaflet'
 import * as turf from '@turf/turf'
 import 'leaflet/dist/leaflet.css'
@@ -10,12 +10,25 @@ const TAXI_TAKEOFF_LANDING_HOURS = 0.5
 const ROUTE_LINE_DASH_PATTERN = '10, 10'
 const MAX_VISIBLE_AIRPORTS = 20
 const MIN_ZOOM_FOR_MARKERS = 5
+const ZOOM_INCREMENT = 2
+const MIN_CLICK_ZOOM = 10
 
 // Airport level configuration
 const AIRPORT_LEVEL_CONFIG = {
   1: { size: 10, color: '#FF4444' },
   2: { size: 8, color: '#4285F4' },
   default: { size: 6, color: '#888888' }
+}
+
+// Helper function to create marker styles
+const createMarkerStyles = (iconSize, iconColor) => {
+  return `width: ${iconSize}px;
+    height: ${iconSize}px;
+    background-color: ${iconColor};
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    cursor: pointer;`
 }
 
 // Aircraft configuration based on distance
@@ -76,14 +89,16 @@ export function App() {
     }
   }, [])
 
+  // Memoize max level calculation to avoid recalculating on every render
+  const maxLevel = useMemo(() => {
+    return airports.reduce((max, airport) => Math.max(max, airport.level || 1), 1)
+  }, [airports])
+
   // Update airport markers based on map position and zoom
   useEffect(() => {
     if (!mapRef.current || airports.length === 0) return
 
     const map = mapRef.current
-
-    // Calculate max level dynamically from airport data
-    const maxLevel = airports.reduce((max, airport) => Math.max(max, airport.level || 1), 1)
 
     const updateAirportMarkers = () => {
       // Clear existing airport markers
@@ -126,15 +141,7 @@ export function App() {
         
         const icon = L.divIcon({
           className: 'airport-marker',
-          html: `<div style="
-            width: ${iconSize}px;
-            height: ${iconSize}px;
-            background-color: ${iconColor};
-            border: 2px solid white;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            cursor: pointer;
-          "></div>`,
+          html: `<div style="${createMarkerStyles(iconSize, iconColor)}"></div>`,
           iconSize: [iconSize + 4, iconSize + 4],
           iconAnchor: [(iconSize + 4) / 2, (iconSize + 4) / 2]
         })
@@ -149,7 +156,7 @@ export function App() {
 
         // Make marker clickable to zoom in
         marker.on('click', () => {
-          map.setView([airport.lat, airport.lon], Math.max(zoom + 2, 10), {
+          map.setView([airport.lat, airport.lon], Math.max(zoom + ZOOM_INCREMENT, MIN_CLICK_ZOOM), {
             animate: true,
             duration: 0.5
           })
@@ -173,7 +180,7 @@ export function App() {
       airportMarkersRef.current.forEach(marker => marker.remove())
       airportMarkersRef.current = []
     }
-  }, [airports])
+  }, [airports, maxLevel])
 
   // Filter airports based on search query and map center
   useEffect(() => {
