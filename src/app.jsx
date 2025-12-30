@@ -322,6 +322,10 @@ export function App() {
     }
   }
 
+  const toggleRouteInfoExpanded = () => {
+    setRouteInfoExpanded(!routeInfoExpanded)
+  }
+
   const handleAirportSelect = (airport) => {
     if (mapRef.current) {
       // If no origin is selected, set this as origin
@@ -419,7 +423,14 @@ export function App() {
       {/* Route Info Box */}
       {routeInfo && (
         <div class={`route-info-box ${routeInfoExpanded ? 'expanded' : ''}`}>
-          <div class="route-info-header" onClick={() => isMobile && setRouteInfoExpanded(!routeInfoExpanded)}>
+          <div 
+            class="route-info-header" 
+            onClick={() => isMobile && toggleRouteInfoExpanded()}
+            onKeyDown={(e) => isMobile && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggleRouteInfoExpanded())}
+            role={isMobile ? 'button' : undefined}
+            tabIndex={isMobile ? 0 : undefined}
+            aria-expanded={isMobile ? routeInfoExpanded : undefined}
+          >
             <h3>Route Information</h3>
             <div class="header-buttons">
               {isMobile && (
@@ -427,7 +438,7 @@ export function App() {
                   class="expand-button" 
                   onClick={(e) => {
                     e.stopPropagation()
-                    setRouteInfoExpanded(!routeInfoExpanded)
+                    toggleRouteInfoExpanded()
                   }}
                   aria-label={routeInfoExpanded ? "Collapse" : "Expand"}
                 >

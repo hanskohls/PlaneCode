@@ -332,6 +332,6 @@
   
   .route-info-content {
     overflow-y: auto;
-    max-height: calc(30vh - 50px);
+    max-height: calc(30vh - 50px); /* 50px accounts for header height */
   }
 }
