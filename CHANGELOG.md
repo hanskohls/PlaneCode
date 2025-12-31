@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.12] - 2025-12-30
+
+### Changed
+- Version bump for PR #31: Increase logo stroke widths for mobile visibility
+
+## [0.0.11] - 2025-12-30
+
+### Changed
+- Version bump for PR #28: Add version field to web manifest from package.json
+
+## [0.0.10] - 2025-12-30
+
+### Changed
+- Version bump for PR #29: Add GDPR-compliant privacy documentation modal
+
 ## [0.0.9] - 2025-12-30
 
 ### Changed
