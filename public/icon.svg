@@ -3,9 +3,9 @@
   <rect width="512" height="512" fill="#667eea" rx="80"/>
   
   <!-- Simple globe with negative space -->
-  <circle cx="256" cy="256" r="120" fill="none" stroke="#000" stroke-width="2" opacity="0.3"/>
-  <ellipse cx="256" cy="256" rx="120" ry="35" fill="none" stroke="#000" stroke-width="1.5" opacity="0.25"/>
-  <ellipse cx="256" cy="256" rx="35" ry="120" fill="none" stroke="#000" stroke-width="1.5" opacity="0.25"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#000" stroke-width="6" opacity="0.3"/>
+  <ellipse cx="256" cy="256" rx="120" ry="35" fill="none" stroke="#000" stroke-width="4" opacity="0.25"/>
+  <ellipse cx="256" cy="256" rx="35" ry="120" fill="none" stroke="#000" stroke-width="4" opacity="0.25"/>
   
   <!-- Minimal plane silhouette -->
   <path d="M 320 210 L 290 205 L 270 170 L 265 170 L 268 205 L 245 208 L 238 198 L 235 198 L 236 208 L 235 218 L 238 218 L 245 208 L 268 211 L 265 246 L 270 246 L 290 211 L 320 216 Z" 
