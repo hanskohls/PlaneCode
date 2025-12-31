@@ -9,7 +9,7 @@ import { Globe } from './Globe.jsx'
 const KM_TO_MILES_CONVERSION = 0.621371
 const TAXI_TAKEOFF_LANDING_HOURS = 0.5
 const ROUTE_LINE_DASH_PATTERN = '10, 10'
-const MAX_VISIBLE_AIRPORTS = 100 // Increased to show more airports based on screen density
+const AIRPORTS_PER_SQUARE_INCH = 20 // Target density for airport markers
 const MIN_ZOOM_FOR_MARKERS = 5
 const ZOOM_INCREMENT = 2
 const MIN_CLICK_ZOOM = 10
@@ -83,7 +83,7 @@ export function App() {
   const [routeCoordinates, setRouteCoordinates] = useState([]) // Store route coordinates for globe
   const [showTour, setShowTour] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
-  const [mapCenter, setMapCenter] = useState(null) // Track map center for search updates
+  const [mapCenter, setMapCenter] = useState({ lat: 0, lng: 0 }) // Track map center for search updates
 
   // Check if user is new and should see the tour
   useEffect(() => {
@@ -220,8 +220,8 @@ export function App() {
       const screenHeightInches = pixelHeight / dpi
       const screenAreaSqInches = screenWidthInches * screenHeightInches
       
-      // Calculate max airports based on ~20 per square inch
-      const dynamicMaxAirports = Math.ceil(screenAreaSqInches * 20)
+      // Calculate max airports based on target density
+      const dynamicMaxAirports = Math.ceil(screenAreaSqInches * AIRPORTS_PER_SQUARE_INCH)
 
       // Get airports in current view
       const visibleAirports = airports.filter(airport => {
