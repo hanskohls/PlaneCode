@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.15] - 2025-12-31
+
+### Changed
+- Version bump for PR #33: Add 3D globe view with view toggle (merge conflicts resolved)
+
 ## [0.0.14] - 2025-12-31
 
 ### Changed
