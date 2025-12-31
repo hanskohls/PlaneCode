@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.14] - 2025-12-31
+
+### Changed
+- Version bump for PR #35: Replace deprecated sourcemap-codec and source-map packages using npm overrides
+
 ## [0.0.13] - 2025-12-31
 
 ### Changed
