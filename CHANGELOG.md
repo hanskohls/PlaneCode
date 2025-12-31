@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.13] - 2025-12-31
+
+### Changed
+- Version bump for PR #30: Add intro tour for new users
+
 ## [0.0.12] - 2025-12-30
 
 ### Changed
