@@ -725,6 +725,139 @@ export function App() {
         </div>
       )}
       
+      {/* Intro Tour Modal */}
+      {showTour && (
+        <div class="tour-overlay">
+          <div class="tour-modal">
+            <div class="tour-header">
+              <h2>Welcome to PlaneCode! ✈️</h2>
+              <button 
+                class="tour-close-button" 
+                onClick={() => closeTour(true)}
+                aria-label="Close tour"
+              >
+                ×
+              </button>
+            </div>
+            <div class="tour-content">
+              <div class="tour-step">
+                <div class="tour-step-number">1</div>
+                <div class="tour-step-text">
+                  <h3>Search for an Airport</h3>
+                  <p>Click the search button in the top right corner to search for airports by city, name, or ICAO/IATA code.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">2</div>
+                <div class="tour-step-text">
+                  <h3>Select Your Origin</h3>
+                  <p>Choose an airport from the search results to set it as your starting point, or click on any airport marker on the map.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">3</div>
+                <div class="tour-step-text">
+                  <h3>Create Your Route</h3>
+                  <p>Search and select a second airport as your destination. A route will be drawn showing distance, flight time, and aircraft type!</p>
+                </div>
+              </div>
+            </div>
+            <div class="tour-footer">
+              <button 
+                class="tour-button tour-button-primary" 
+                onClick={() => closeTour(true)}
+              >
+                Got it!
+              </button>
+              <button 
+                class="tour-button tour-button-secondary" 
+                onClick={() => closeTour(false)}
+              >
+                Remind me later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Privacy Modal */}
+      {showPrivacyModal && (
+        <div 
+          class="privacy-modal-overlay" 
+          onClick={() => setShowPrivacyModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="privacy-modal-title"
+        >
+          <div class="privacy-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div class="privacy-modal-header">
+              <h2 id="privacy-modal-title">Privacy & Data Information</h2>
+              <button 
+                ref={privacyModalCloseRef}
+                class="privacy-modal-close" 
+                onClick={() => setShowPrivacyModal(false)}
+                aria-label="Close privacy information"
+              >
+                ×
+              </button>
+            </div>
+            <div class="privacy-modal-body">
+              <section>
+                <h3>🔒 Your Privacy is Protected</h3>
+                <p>
+                  PlaneCode is designed with privacy as a core principle. We are committed to protecting your personal information and complying with data protection regulations including GDPR (EU) and similar privacy laws.
+                </p>
+              </section>
+              
+              <section>
+                <h3>📊 No Tracking or Analytics</h3>
+                <p>
+                  We do not use any tracking, analytics, or monitoring services. Your browsing behavior, searches, and interactions with this application are never recorded, transmitted, or shared with any third parties.
+                </p>
+              </section>
+              
+              <section>
+                <h3>💾 Local Storage Only</h3>
+                <p>
+                  PlaneCode stores data only on your device for functionality purposes:
+                </p>
+                <ul>
+                  <li><strong>Map Tiles:</strong> OpenStreetMap tiles are cached locally using a service worker to enable offline viewing of previously visited map areas.</li>
+                  <li><strong>No Personal Data:</strong> We do not collect, store, or process any personal information, user accounts, or identifiable data.</li>
+                </ul>
+              </section>
+              
+              <section>
+                <h3>🍪 No Cookies</h3>
+                <p>
+                  This application does not use cookies or similar tracking technologies. All data remains on your device and is never transmitted to external servers except for loading map tiles from OpenStreetMap.
+                </p>
+              </section>
+              
+              <section>
+                <h3>🌐 Third-Party Services</h3>
+                <p>
+                  PlaneCode uses OpenStreetMap for map tiles, which are loaded directly from their servers. Please refer to <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer">OpenStreetMap's Privacy Policy</a> for information about their data practices.
+                </p>
+              </section>
+              
+              <section>
+                <h3>✅ Your Rights</h3>
+                <p>
+                  Since we do not collect or process any personal data, there is no data to access, correct, or delete. You can clear locally cached map tiles by clearing your browser's cache or uninstalling the application.
+                </p>
+              </section>
+              
+              <section class="privacy-modal-footer">
+                <p>
+                  <em>Last updated: {PRIVACY_POLICY_LAST_UPDATED}</em>
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Route Info Box */}
       {routeInfo && (
         <div class={`route-info-box ${routeInfoExpanded ? 'expanded' : ''}`}>
