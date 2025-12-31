@@ -6,11 +6,26 @@ A minimal Vite + Preact application with an interactive globe/map viewer using O
 
 - Built with Vite for fast development
 - Preact for lightweight React alternative
-- Leaflet for interactive map visualization
+- Leaflet for interactive 2D map visualization
+- Three.js for interactive 3D globe visualization
+- **Toggle between 2D Map and 3D Globe views** - Switch perspectives with a single click
 - OpenStreetMap tiles (free and open source)
 - **Progressive Web App (PWA)** - Install on your device for offline use
 - Service worker for offline map tile caching
 - Automatic version bumping on each PR merge
+
+## Views
+
+### 2D Map View
+The traditional flat map view powered by Leaflet, perfect for detailed route planning and airport exploration.
+
+### 3D Globe View
+An interactive 3D globe powered by Three.js that provides a realistic spherical representation of the Earth. Features include:
+- Drag to rotate the globe
+- Scroll to zoom in/out
+- Automatic slow rotation when idle
+- Airport markers displayed as colored spheres
+- Flight routes shown as great circle arcs
 
 ## Progressive Web App
 
@@ -79,7 +94,8 @@ npm run preview
 
 - **Vite**: Fast build tool and dev server
 - **Preact**: Lightweight 3kb alternative to React
-- **Leaflet**: Open-source JavaScript library for interactive maps
+- **Leaflet**: Open-source JavaScript library for interactive 2D maps
+- **Three.js**: JavaScript 3D library for WebGL-based 3D globe rendering
 - **OpenStreetMap**: Free, editable map of the world
 
 ## About

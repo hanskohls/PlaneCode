@@ -3,6 +3,7 @@ import L from 'leaflet'
 import * as turf from '@turf/turf'
 import 'leaflet/dist/leaflet.css'
 import './app.css'
+import { Globe } from './Globe.jsx'
 
 // Constants
 const KM_TO_MILES_CONVERSION = 0.621371
@@ -78,6 +79,8 @@ export function App() {
   const [routeInfo, setRouteInfo] = useState(null)
   const [routeInfoExpanded, setRouteInfoExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [viewMode, setViewMode] = useState('2d') // '2d' or '3d'
+  const [routeCoordinates, setRouteCoordinates] = useState([]) // Store route coordinates for globe
   const [showTour, setShowTour] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
@@ -354,13 +357,7 @@ export function App() {
   }
 
   const createRoute = (origin, destination) => {
-    if (!mapRef.current) return
-
-    // Remove existing route line
-    if (routeLineRef.current) {
-      routeLineRef.current.remove()
-      routeLineRef.current = null
-    }
+    if (!mapRef.current && viewMode === '2d') return
 
     // Create route line using turf.js
     const from = turf.point([origin.lon, origin.lat])
@@ -374,15 +371,34 @@ export function App() {
     // Convert to Leaflet coordinates (reverse lat/lon)
     const coords = line.geometry.coordinates.map(coord => [coord[1], coord[0]])
     
-    // Draw the route on the map
-    const routeLine = L.polyline(coords, {
-      color: '#4285F4',
-      weight: 3,
-      opacity: 0.8,
-      dashArray: ROUTE_LINE_DASH_PATTERN
-    }).addTo(mapRef.current)
+    // Store coordinates for globe view
+    setRouteCoordinates(coords)
     
-    routeLineRef.current = routeLine
+    // Only draw on 2D map if in 2D mode
+    if (viewMode === '2d' && mapRef.current) {
+      // Remove existing route line
+      if (routeLineRef.current) {
+        routeLineRef.current.remove()
+        routeLineRef.current = null
+      }
+      
+      // Draw the route on the map
+      const routeLine = L.polyline(coords, {
+        color: '#4285F4',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: ROUTE_LINE_DASH_PATTERN
+      }).addTo(mapRef.current)
+      
+      routeLineRef.current = routeLine
+
+      // Fit map to show both airports
+      const bounds = L.latLngBounds([
+        [origin.lat, origin.lon],
+        [destination.lat, destination.lon]
+      ])
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] })
+    }
 
     // Calculate flight time
     const { hours, minutes, aircraft } = calculateFlightTime(distance)
@@ -397,13 +413,6 @@ export function App() {
       minutes,
       aircraft
     })
-
-    // Fit map to show both airports
-    const bounds = L.latLngBounds([
-      [origin.lat, origin.lon],
-      [destination.lat, destination.lon]
-    ])
-    mapRef.current.fitBounds(bounds, { padding: [50, 50] })
   }
 
   const clearRoute = () => {
@@ -422,6 +431,7 @@ export function App() {
     setDestinationAirport(null)
     setRouteInfo(null)
     setRouteInfoExpanded(false)
+    setRouteCoordinates([])
   }
 
   const handleSearchToggle = () => {
@@ -549,7 +559,171 @@ export function App() {
 
   return (
     <div class="app-container">
-      <div ref={mapContainer} class="map-container"></div>
+      {/* 2D Map View */}
+      {viewMode === '2d' && (
+        <div ref={mapContainer} class="map-container"></div>
+      )}
+      
+      {/* 3D Globe View */}
+      {viewMode === '3d' && (
+        <Globe 
+          airports={airports}
+          originAirport={originAirport}
+          destinationAirport={destinationAirport}
+          routeCoordinates={routeCoordinates}
+        />
+      )}
+      
+      {/* View Toggle Button */}
+      <button
+        class="view-toggle-button"
+        onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+        aria-label={`Switch to ${viewMode === '2d' ? '3D globe' : '2D map'} view`}
+        title={`Switch to ${viewMode === '2d' ? '3D globe' : '2D map'} view`}
+      >
+        {viewMode === '2d' ? (
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+          </svg>
+        )}
+      </button>
+      
+      {/* Intro Tour Modal */}
+      {showTour && (
+        <div class="tour-overlay">
+          <div class="tour-modal">
+            <div class="tour-header">
+              <h2>Welcome to PlaneCode! ✈️</h2>
+              <button 
+                class="tour-close-button" 
+                onClick={() => closeTour(true)}
+                aria-label="Close tour"
+              >
+                ×
+              </button>
+            </div>
+            <div class="tour-content">
+              <div class="tour-step">
+                <div class="tour-step-number">1</div>
+                <div class="tour-step-text">
+                  <h3>Search for an Airport</h3>
+                  <p>Click the search button in the top right corner to search for airports by city, name, or ICAO/IATA code.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">2</div>
+                <div class="tour-step-text">
+                  <h3>Select Your Origin</h3>
+                  <p>Choose an airport from the search results to set it as your starting point, or click on any airport marker on the map.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">3</div>
+                <div class="tour-step-text">
+                  <h3>Create Your Route</h3>
+                  <p>Search and select a second airport as your destination. A route will be drawn showing distance, flight time, and aircraft type!</p>
+                </div>
+              </div>
+            </div>
+            <div class="tour-footer">
+              <button 
+                class="tour-button tour-button-primary" 
+                onClick={() => closeTour(true)}
+              >
+                Got it!
+              </button>
+              <button 
+                class="tour-button tour-button-secondary" 
+                onClick={() => closeTour(false)}
+              >
+                Remind me later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Privacy Modal */}
+      {showPrivacyModal && (
+        <div 
+          class="privacy-modal-overlay" 
+          onClick={() => setShowPrivacyModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="privacy-modal-title"
+        >
+          <div class="privacy-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div class="privacy-modal-header">
+              <h2 id="privacy-modal-title">Privacy & Data Information</h2>
+              <button 
+                ref={privacyModalCloseRef}
+                class="privacy-modal-close" 
+                onClick={() => setShowPrivacyModal(false)}
+                aria-label="Close privacy information"
+              >
+                ×
+              </button>
+            </div>
+            <div class="privacy-modal-body">
+              <section>
+                <h3>🔒 Your Privacy is Protected</h3>
+                <p>
+                  PlaneCode is designed with privacy as a core principle. We are committed to protecting your personal information and complying with data protection regulations including GDPR (EU) and similar privacy laws.
+                </p>
+              </section>
+              
+              <section>
+                <h3>📊 No Tracking or Analytics</h3>
+                <p>
+                  We do not use any tracking, analytics, or monitoring services. Your browsing behavior, searches, and interactions with this application are never recorded, transmitted, or shared with any third parties.
+                </p>
+              </section>
+              
+              <section>
+                <h3>💾 Local Storage Only</h3>
+                <p>
+                  PlaneCode stores data only on your device for functionality purposes:
+                </p>
+                <ul>
+                  <li><strong>Map Tiles:</strong> OpenStreetMap tiles are cached locally using a service worker to enable offline viewing of previously visited map areas.</li>
+                  <li><strong>No Personal Data:</strong> We do not collect, store, or process any personal information, user accounts, or identifiable data.</li>
+                </ul>
+              </section>
+              
+              <section>
+                <h3>🍪 No Cookies</h3>
+                <p>
+                  This application does not use cookies or similar tracking technologies. All data remains on your device and is never transmitted to external servers except for loading map tiles from OpenStreetMap.
+                </p>
+              </section>
+              
+              <section>
+                <h3>🌐 Third-Party Services</h3>
+                <p>
+                  PlaneCode uses OpenStreetMap for map tiles, which are loaded directly from their servers. Please refer to <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer">OpenStreetMap's Privacy Policy</a> for information about their data practices.
+                </p>
+              </section>
+              
+              <section>
+                <h3>✅ Your Rights</h3>
+                <p>
+                  Since we do not collect or process any personal data, there is no data to access, correct, or delete. You can clear locally cached map tiles by clearing your browser's cache or uninstalling the application.
+                </p>
+              </section>
+              
+              <section class="privacy-modal-footer">
+                <p>
+                  <em>Last updated: {PRIVACY_POLICY_LAST_UPDATED}</em>
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Intro Tour Modal */}
       {showTour && (
