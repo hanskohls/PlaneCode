@@ -78,7 +78,21 @@ export function App() {
   const [routeInfo, setRouteInfo] = useState(null)
   const [routeInfoExpanded, setRouteInfoExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [showTour, setShowTour] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+
+  // Check if user is new and should see the tour
+  useEffect(() => {
+    try {
+      const hasSeenTour = localStorage.getItem('hasSeenTour')
+      if (!hasSeenTour) {
+        setShowTour(true)
+      }
+    } catch (err) {
+      // If localStorage is unavailable (e.g., private browsing), show the tour
+      setShowTour(true)
+    }
+  }, [])
 
   // Load airports data
   useEffect(() => {
@@ -421,6 +435,19 @@ export function App() {
     setRouteInfoExpanded(!routeInfoExpanded)
   }
 
+  const closeTour = (dontShowAgain = false) => {
+    setShowTour(false)
+    if (dontShowAgain) {
+      try {
+        localStorage.setItem('hasSeenTour', 'true')
+      } catch (err) {
+        // If localStorage is unavailable, silently fail
+        // Tour will show again on next visit
+        console.warn('Could not save tour preference:', err)
+      }
+    }
+  }
+
   const handleAirportSelect = (airport) => {
     if (mapRef.current) {
       // If no origin is selected, set this as origin
@@ -523,6 +550,61 @@ export function App() {
   return (
     <div class="app-container">
       <div ref={mapContainer} class="map-container"></div>
+      
+      {/* Intro Tour Modal */}
+      {showTour && (
+        <div class="tour-overlay">
+          <div class="tour-modal">
+            <div class="tour-header">
+              <h2>Welcome to PlaneCode! ✈️</h2>
+              <button 
+                class="tour-close-button" 
+                onClick={() => closeTour(true)}
+                aria-label="Close tour"
+              >
+                ×
+              </button>
+            </div>
+            <div class="tour-content">
+              <div class="tour-step">
+                <div class="tour-step-number">1</div>
+                <div class="tour-step-text">
+                  <h3>Search for an Airport</h3>
+                  <p>Click the search button in the top right corner to search for airports by city, name, or ICAO/IATA code.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">2</div>
+                <div class="tour-step-text">
+                  <h3>Select Your Origin</h3>
+                  <p>Choose an airport from the search results to set it as your starting point, or click on any airport marker on the map.</p>
+                </div>
+              </div>
+              <div class="tour-step">
+                <div class="tour-step-number">3</div>
+                <div class="tour-step-text">
+                  <h3>Create Your Route</h3>
+                  <p>Search and select a second airport as your destination. A route will be drawn showing distance, flight time, and aircraft type!</p>
+                </div>
+              </div>
+            </div>
+            <div class="tour-footer">
+              <button 
+                class="tour-button tour-button-primary" 
+                onClick={() => closeTour(true)}
+              >
+                Got it!
+              </button>
+              <button 
+                class="tour-button tour-button-secondary" 
+                onClick={() => closeTour(false)}
+              >
+                Remind me later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Privacy Modal */}
       {showPrivacyModal && (
