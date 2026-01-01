@@ -20,7 +20,8 @@
   right: 20px;
   z-index: 1000;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 10px;
 }
 
@@ -92,7 +93,6 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  margin-top: 10px;
 }
 
 .privacy-button:hover {
@@ -103,7 +103,7 @@
 .privacy-button svg {
   width: 28px;
   height: 28px;
-  fill: #4285F4;
+  fill: #333;
 }
 
 /* Privacy Modal */

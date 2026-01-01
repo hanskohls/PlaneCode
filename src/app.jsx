@@ -9,17 +9,17 @@ import { Globe } from './Globe.jsx'
 const KM_TO_MILES_CONVERSION = 0.621371
 const TAXI_TAKEOFF_LANDING_HOURS = 0.5
 const ROUTE_LINE_DASH_PATTERN = '10, 10'
-const MAX_VISIBLE_AIRPORTS = 20
+const AIRPORTS_PER_SQUARE_INCH = 20 // Target density for airport markers
 const MIN_ZOOM_FOR_MARKERS = 5
 const ZOOM_INCREMENT = 2
 const MIN_CLICK_ZOOM = 10
 const PRIVACY_POLICY_LAST_UPDATED = 'December 2025'
 
-// Airport level configuration
+// Airport level configuration - all airports now have same size and color
 const AIRPORT_LEVEL_CONFIG = {
   1: { size: 10, color: '#FF4444' },
-  2: { size: 8, color: '#4285F4' },
-  default: { size: 6, color: '#888888' }
+  2: { size: 10, color: '#FF4444' },
+  default: { size: 10, color: '#FF4444' }
 }
 
 // Helper function to create marker styles
@@ -83,6 +83,7 @@ export function App() {
   const [routeCoordinates, setRouteCoordinates] = useState([]) // Store route coordinates for globe
   const [showTour, setShowTour] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [mapCenter, setMapCenter] = useState({ lat: 0, lng: 0 }) // Track map center for search updates
 
   // Check if user is new and should see the tour
   useEffect(() => {
@@ -120,15 +121,26 @@ export function App() {
     })
 
     mapRef.current = map
+    
+    // Set initial map center
+    setMapCenter(map.getCenter())
 
     // Add OpenStreetMap tile layer (free and open source)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 18,
     }).addTo(map)
+    
+    // Track map center changes for search updates
+    const updateMapCenter = () => {
+      setMapCenter(map.getCenter())
+    }
+    
+    map.on('moveend', updateMapCenter)
 
     // Cleanup function to remove map on unmount
     return () => {
+      map.off('moveend', updateMapCenter)
       map.remove()
     }
   }, [])
@@ -199,6 +211,18 @@ export function App() {
       // Only show markers when zoomed in enough
       if (zoom < MIN_ZOOM_FOR_MARKERS) return
 
+      // Calculate screen area in square inches (approximate)
+      const container = map.getContainer()
+      const pixelWidth = container.clientWidth
+      const pixelHeight = container.clientHeight
+      const dpi = window.devicePixelRatio * 96 // Approximate DPI
+      const screenWidthInches = pixelWidth / dpi
+      const screenHeightInches = pixelHeight / dpi
+      const screenAreaSqInches = screenWidthInches * screenHeightInches
+      
+      // Calculate max airports based on target density
+      const dynamicMaxAirports = Math.ceil(screenAreaSqInches * AIRPORTS_PER_SQUARE_INCH)
+
       // Get airports in current view
       const visibleAirports = airports.filter(airport => {
         return bounds.contains([airport.lat, airport.lon])
@@ -208,15 +232,15 @@ export function App() {
       let airportsToShow = []
       let currentLevel = 1
 
-      while (airportsToShow.length < MAX_VISIBLE_AIRPORTS && currentLevel <= maxLevel) {
+      while (airportsToShow.length < dynamicMaxAirports && currentLevel <= maxLevel) {
         const levelAirports = visibleAirports.filter(a => a.level === currentLevel)
         airportsToShow = airportsToShow.concat(levelAirports)
         currentLevel++
       }
 
       // If we still have too many, prioritize by level and limit
-      if (airportsToShow.length > MAX_VISIBLE_AIRPORTS) {
-        airportsToShow = airportsToShow.slice(0, MAX_VISIBLE_AIRPORTS)
+      if (airportsToShow.length > dynamicMaxAirports) {
+        airportsToShow = airportsToShow.slice(0, dynamicMaxAirports)
       }
 
       // Get ICAOs of airports that already have markers (preserved)
@@ -339,7 +363,7 @@ export function App() {
 
     // Limit to top 10 results
     setFilteredAirports(results.slice(0, 10))
-  }, [searchQuery, airports, searchOpen])
+  }, [searchQuery, airports, searchOpen, mapCenter])
 
   // Calculate flight time based on distance and typical aircraft speed
   const calculateFlightTime = (distanceKm) => {
