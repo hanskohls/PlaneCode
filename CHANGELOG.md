@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.16] - 2026-01-01
+
+### Changed
+- Version bump for PR #37: Standardize airport markers and fix control alignment
+
 ## [0.0.15] - 2025-12-31
 
 ### Changed
